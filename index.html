@@ -1,0 +1,378 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Heart, X, User, MessageCircle, Settings, Camera, ChevronLeft, 
+  Send, Trash2, Edit3, AlertCircle, MapPin, Menu, LogIn, 
+  UserPlus, Home, CheckCircle2, Lock, Search, ArrowLeft
+} from 'lucide-react';
+
+// --- COMPONENTE: TOAST NOTIFICATION ---
+const Toast = ({ message, type = 'success', isVisible }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-top-4 duration-300">
+      <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/20 ${
+        type === 'danger' ? 'bg-red-500/90 text-white' : 'bg-emerald-600/90 text-white'
+      }`}>
+        {type === 'danger' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+        <span className="text-sm font-bold tracking-tight">{message}</span>
+      </div>
+    </div>
+  );
+};
+
+export default function App() {
+  // --- ESTADOS DE NAVEGACIÓN Y UI ---
+  const [currentView, setCurrentView] = useState('landing'); 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [cardIndex, setCardIndex] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // --- MOCK DE DATOS DEL USUARIO LOGUEADO ---
+  const [myProfile, setMyProfile] = useState({
+    name: 'Roberto',
+    age: 26,
+    bio: 'Arquitecto buscando alguien para ir por unos tacos de aire al Barrio de San Juan.',
+    interests: 'Arquitectura, Fotografía, Gastronomía',
+    seeking: 'Mujeres',
+    photos: []
+  });
+
+  // --- MOCK DE DESCUBRIMIENTO ---
+  const profiles = [
+    { id: 1, name: 'Valentina', age: 23, bio: 'Amo los domingos en el Parque Metropolitano.', photos: ['https://images.unsplash.com/photo-1524504388940-b1c1722653e1'] },
+    { id: 2, name: 'Mateo', age: 28, bio: 'Fanático del Club León. ¡Dale Verde!', photos: ['https://images.unsplash.com/photo-1506794778202-cad84cf45f1d'] }
+  ];
+
+  // --- HELPERS ---
+  const notify = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const handleAction = (msg) => {
+    notify(msg);
+    setCardIndex(prev => prev + 1);
+  };
+
+  // --- 1. PÁGINA DE ACCESO (LANDING) ---
+  const LandingView = () => (
+    <div className="h-screen bg-[#0f172a] flex flex-col items-center justify-between p-8 text-white relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-20%] w-[100%] h-[60%] bg-emerald-600/20 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-10%] right-[-20%] w-[100%] h-[60%] bg-teal-600/10 blur-[120px] rounded-full" />
+      
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 text-center animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-[2.5rem] shadow-[0_0_50px_rgba(16,185,129,0.4)] flex items-center justify-center mb-8 rotate-3">
+          <Heart size={48} fill="white" className="text-white" />
+        </div>
+        <h1 className="text-6xl font-black italic tracking-tighter mb-4 bg-gradient-to-r from-white to-emerald-300 bg-clip-text text-transparent">LionMatch</h1>
+        <p className="text-xl text-emerald-100/70 font-medium max-w-[280px]">Conecta con personas reales en <span className="text-emerald-400">León, Gto</span>.</p>
+      </div>
+
+      <div className="w-full max-w-sm space-y-4 mb-10 relative z-10">
+        <button 
+          id="btn_register" 
+          onClick={() => setCurrentView('onboarding')}
+          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black py-5 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:scale-[1.03] active:scale-95 transition-all text-lg uppercase tracking-wider"
+        >
+          Crear cuenta
+        </button>
+        <button 
+          id="btn_login" 
+          onClick={() => { setCurrentView('discovery'); notify('¡Bienvenido de nuevo!'); }}
+          className="w-full bg-white/5 border border-white/10 text-white font-bold py-5 rounded-2xl backdrop-blur-md hover:bg-white/10 active:scale-95 transition-all"
+        >
+          Entrar
+        </button>
+      </div>
+    </div>
+  );
+
+  // --- 2. PÁGINA DE FORMULARIO (REGISTRO / EDICIÓN) ---
+  const FormView = ({ isEditing = false }) => (
+    <div className="min-h-screen bg-white p-6 pb-24 animate-in slide-in-from-right duration-500 overflow-y-auto">
+      <header className="mt-8 mb-8 flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-gray-900">{isEditing ? 'Editar Perfil' : 'Registro'}</h2>
+          <p className="text-gray-400 text-sm font-medium">Completa tu información de León.</p>
+        </div>
+        {isEditing && (
+          <button onClick={() => setCurrentView('profile')} className="p-3 bg-gray-100 rounded-2xl text-gray-500">
+            <X size={20} />
+          </button>
+        )}
+      </header>
+
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-4">
+          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-[-8px]">Información Personal</label>
+          <input id="txt_nombre" defaultValue={isEditing ? myProfile.name : ''} type="text" placeholder="Tu nombre" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium" />
+          <div className="grid grid-cols-2 gap-4">
+            <input id="txt_nacimiento" type="date" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium" />
+            <select id="sel_genero" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none font-medium">
+              <option value="">Género</option>
+              <option>Hombre</option>
+              <option>Mujer</option>
+              <option>No binario</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">¿Qué buscas? *</label>
+          <div className="grid grid-cols-2 gap-3" id="sel_busqueda">
+            <button className={`p-4 rounded-2xl font-bold transition-all border-2 ${myProfile.seeking === 'Hombres' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>Hombres</button>
+            <button className={`p-4 rounded-2xl font-bold transition-all border-2 ${myProfile.seeking === 'Mujeres' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>Mujeres</button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ubicación (Exclusiva)</label>
+          <div className="relative group">
+            <input id="ciudad_estado" disabled readOnly value="León, Guanajuato" className="w-full p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl text-gray-400 pl-12 cursor-not-allowed font-bold" />
+            <Lock size={18} className="absolute left-4 top-4 text-gray-400" />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Fotos Requeridas (4)</label>
+          <div className="grid grid-cols-2 gap-3">
+            {[1,2,3,4].map(i => (
+              <div key={i} id={`foto_${i}`} className="aspect-[3/4] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer group shadow-sm">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <Camera className="text-emerald-500" size={20} />
+                </div>
+                <span className="text-[10px] font-black text-gray-300 mt-2">SLOT {i}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Acerca de ti</label>
+          <textarea id="txt_bio" defaultValue={isEditing ? myProfile.bio : ''} placeholder="Bio, intereses y aficiones..." className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none h-32 font-medium" />
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white/90 to-transparent flex gap-3">
+        {isEditing && (
+          <button onClick={() => setCurrentView('profile')} className="flex-1 bg-gray-100 text-gray-600 font-black py-5 rounded-2xl shadow-lg uppercase text-xs">Cancelar</button>
+        )}
+        <button 
+          id="btn_save"
+          onClick={() => { setCurrentView(isEditing ? 'profile' : 'discovery'); notify(isEditing ? 'Perfil actualizado' : '¡Registro completado!'); }}
+          className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest text-xs"
+        >
+          {isEditing ? 'Guardar Cambios' : 'Comenzar'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // --- 3. PÁGINA DE DESCUBRIMIENTO (EL MURO) ---
+  const DiscoveryView = () => {
+    const active = profiles[cardIndex];
+    return (
+      <div className="h-screen flex flex-col bg-white animate-in fade-in">
+        <header className="p-4 flex items-center justify-between border-b bg-white/80 backdrop-blur-md sticky top-0 z-20">
+          <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} className="text-gray-900" /></button>
+          <h2 className="font-black italic text-emerald-600 text-2xl tracking-tighter">LionMatch</h2>
+          <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => setCurrentView('profile')}>
+            <User size={20} className="text-gray-500" />
+          </div>
+        </header>
+
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+          {active ? (
+            <div className="w-full max-w-sm relative animate-in zoom-in-95 duration-500">
+              <div className="relative aspect-[3/4.2] rounded-[3rem] overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-8 border-white group">
+                <img src={active.photos[0]} className="w-full h-full object-cover" alt={active.name} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-8 flex flex-col justify-end">
+                  <h3 className="text-4xl font-black text-white leading-tight">{active.name}, {active.age}</h3>
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs mt-1">
+                    <MapPin size={12} /> León, Gto
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-center gap-6 -mt-10 relative z-10">
+                <button id="btn_reject" onClick={() => handleAction('Perfil rechazado')} className="w-20 h-20 rounded-full bg-white shadow-2xl flex items-center justify-center text-red-500 hover:scale-110 active:scale-90 transition-all border border-gray-100 group"><X size={36} className="group-hover:rotate-12 transition-transform" strokeWidth={3} /></button>
+                <button id="btn_like" onClick={() => handleAction('¡Match enviado! ❤️')} className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-90 transition-all group"><Heart size={36} fill="currentColor" className="group-hover:scale-110 transition-transform" /></button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-12 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200 animate-in zoom-in-95">
+              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600"><Search size={40} /></div>
+              <h2 className="text-2xl font-black text-gray-900">¿Eso es todo?</h2>
+              <p className="text-gray-500 mt-2 text-sm max-w-[220px] mx-auto">“Por ahora no hay más perfiles en León.”</p>
+              <button onClick={() => setCardIndex(0)} className="mt-8 px-10 py-4 bg-white text-emerald-600 font-black rounded-2xl shadow-sm border border-emerald-100 active:scale-95 transition-all uppercase text-xs tracking-widest">Reiniciar búsqueda</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // --- 4. PÁGINA DE MENSAJERÍA (BANDEJA + CHAT) ---
+  const MessagesView = () => (
+    <div className="min-h-screen bg-white flex flex-col animate-in slide-in-from-bottom-4 duration-500">
+      <header className="p-4 border-b flex items-center gap-4 bg-white sticky top-0 z-20">
+        <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} /></button>
+        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Chats</h2>
+      </header>
+      
+      <div className="p-4">
+        <label className="text-[10px] font-black text-emerald-600 uppercase mb-4 tracking-[0.25em] block">Nuevos Matches</label>
+        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="flex-shrink-0 text-center space-y-2 group cursor-pointer">
+              <div className="relative p-1 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full shadow-lg group-active:scale-90 transition-transform">
+                <img src={`https://i.pravatar.cc/100?u=${i+30}`} className="w-16 h-16 rounded-full object-cover border-4 border-white" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
+              </div>
+              <p className="text-[10px] font-black text-gray-600">User {i}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 mt-2">
+        <label className="text-[10px] font-black text-gray-400 uppercase px-6 mb-2 tracking-[0.25em] block">Recientes</label>
+        {[
+          { name: 'Diana', msg: '¿Mañana un café en el Moral? ☕', time: '5m', online: true },
+          { name: 'Sebastian', msg: '¡Dale Verde! Jajaja 🦁', time: '1h', online: false }
+        ].map((chat, i) => (
+          <div key={i} onClick={() => notify(`Chat con ${chat.name} (Próximamente)`)} className="flex items-center gap-4 p-5 hover:bg-emerald-50/50 transition-colors cursor-pointer border-b border-gray-50">
+            <div className="relative">
+              <img src={`https://i.pravatar.cc/100?u=${i+10}`} className="w-16 h-16 rounded-[1.5rem] object-cover shadow-md" />
+              {chat.online && <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />}
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between mb-0.5">
+                <h4 className="font-black text-gray-900">{chat.name}</h4>
+                <span className="text-[10px] text-gray-400 font-bold">{chat.time}</span>
+              </div>
+              <p className="text-sm text-gray-500 truncate font-medium">{chat.msg}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 border-t sticky bottom-0 bg-white/90 backdrop-blur-md flex gap-3">
+        <input id="txt_chat_mensaje" type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-sm" />
+        <button id="btn_send" onClick={() => notify('Mensaje enviado ✨')} className="bg-emerald-500 text-white p-4 rounded-2xl shadow-xl active:scale-90 transition-transform"><Send size={20} /></button>
+      </div>
+    </div>
+  );
+
+  // --- 5. PÁGINA DE PERFIL (AJUSTES) ---
+  const ProfileView = () => (
+    <div className="min-h-screen bg-gray-50 flex flex-col animate-in slide-in-from-left duration-500">
+      <header className="p-4 bg-white border-b flex items-center gap-4">
+        <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} /></button>
+        <h2 className="text-xl font-black text-gray-900">Mi Perfil</h2>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-20">
+        <div className="relative aspect-[3/3.8] w-full rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white bg-gray-200">
+          <div className="absolute inset-0 bg-gray-300 flex items-center justify-center"><User size={64} className="text-gray-400" /></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-8 flex flex-col justify-end">
+            <h3 className="text-4xl font-black text-white">{myProfile.name}, {myProfile.age}</h3>
+            <p className="text-emerald-400 font-bold text-sm tracking-widest uppercase">Premium León User</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm space-y-6">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Biografía</label>
+            <p className="text-gray-700 font-medium leading-relaxed">{myProfile.bio}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Gustos / Aficiones</label>
+              <p className="text-gray-700 font-bold text-sm">{myProfile.interests}</p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Busca</label>
+              <p className="text-gray-700 font-bold text-sm">{myProfile.seeking}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button id="btn_edit_profile" onClick={() => setCurrentView('edit')} className="w-full p-5 bg-white rounded-2xl flex items-center gap-4 font-black text-gray-700 shadow-sm hover:shadow-md transition-all">
+            <Edit3 size={20} className="text-emerald-500" /> Editar información del perfil
+          </button>
+          <button id="btn_delete_account" onClick={() => setShowDeleteModal(true)} className="w-full p-5 bg-red-50 text-red-600 rounded-2xl flex items-center gap-4 font-black shadow-sm hover:bg-red-100 transition-all uppercase text-[10px] tracking-widest">
+            <Trash2 size={20} /> Eliminar cuenta permanentemente
+          </button>
+        </div>
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-8 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-xs rounded-[3rem] p-10 text-center shadow-2xl animate-in zoom-in-95">
+            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6"><AlertCircle size={40} /></div>
+            <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">¿Seguro?</h3>
+            <p className="text-gray-500 text-sm font-medium">Esta acción es irreversible y borrará todos tus datos en León.</p>
+            <div className="mt-8 space-y-2">
+              <button id="btn_confirm_delete" className="w-full py-5 bg-red-600 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-all text-xs tracking-widest uppercase">Sí, borrar cuenta</button>
+              <button onClick={() => setShowDeleteModal(false)} className="w-full py-5 bg-gray-100 text-gray-500 font-black rounded-2xl active:scale-95 transition-all text-xs tracking-widest uppercase">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // --- NAVEGACIÓN: SIDEBAR (HAMBURGUESA) ---
+  const Sidebar = () => (
+    <>
+      <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)} />
+      <div className={`fixed top-0 left-0 h-full w-80 bg-white z-[120] transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-2xl flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-10 bg-gradient-to-br from-emerald-600 to-teal-700 text-white relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-4xl font-black italic tracking-tighter">LionMatch</h2>
+            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] mt-1 opacity-70"><MapPin size={10} /> León, Gto</div>
+          </div>
+          <Heart className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 rotate-12" fill="currentColor" />
+        </div>
+        
+        <nav className="flex-1 p-6 space-y-2">
+          {[
+            { id: 'landing', icon: Home, label: 'Inicio' },
+            { id: 'discovery', icon: Search, label: 'Descubrir' },
+            { id: 'messages', icon: MessageCircle, label: 'Mensajes' },
+            { id: 'profile', icon: User, label: 'Mi Perfil' }
+          ].map((item) => (
+            <button 
+              key={item.id}
+              onClick={() => { setCurrentView(item.id); setIsMenuOpen(false); }}
+              className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black transition-all ${currentView === item.id ? 'bg-emerald-50 text-emerald-700 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
+            >
+              <item.icon size={20} className={currentView === item.id ? 'text-emerald-600' : 'text-gray-300'} />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        
+        <div className="p-8 border-t border-gray-100">
+          <button className="flex items-center gap-3 text-gray-400 font-bold hover:text-red-500 transition-colors uppercase text-[10px] tracking-widest"><LogIn size={18} /> Cerrar Sesión</button>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="max-w-md mx-auto relative bg-white min-h-screen shadow-[0_0_100px_rgba(0,0,0,0.1)] font-sans selection:bg-emerald-100 overflow-x-hidden">
+      <Sidebar />
+      <Toast message={toast.message} type={toast.type} isVisible={toast.show} />
+      
+      {currentView === 'landing' && <LandingView />}
+      {currentView === 'onboarding' && <FormView isEditing={false} />}
+      {currentView === 'edit' && <FormView isEditing={true} />}
+      {currentView === 'discovery' && <DiscoveryView />}
+      {currentView === 'messages' && <MessagesView />}
+      {currentView === 'profile' && <ProfileView />}
+    </div>
+  );
+}
