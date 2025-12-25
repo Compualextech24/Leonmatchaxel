@@ -1,378 +1,2038 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Heart, X, User, MessageCircle, Settings, Camera, ChevronLeft, 
-  Send, Trash2, Edit3, AlertCircle, MapPin, Menu, LogIn, 
-  UserPlus, Home, CheckCircle2, Lock, Search, ArrowLeft
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LionMatch - Conecta en León, Gto</title>
+    <style>
+        /* ============================================
+           ESTILOS GLOBALES Y RESET
+        ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-// --- COMPONENTE: TOAST NOTIFICATION ---
-const Toast = ({ message, type = 'success', isVisible }) => {
-  if (!isVisible) return null;
-  return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-top-4 duration-300">
-      <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/20 ${
-        type === 'danger' ? 'bg-red-500/90 text-white' : 'bg-emerald-600/90 text-white'
-      }`}>
-        {type === 'danger' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-        <span className="text-sm font-bold tracking-tight">{message}</span>
-      </div>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 448px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 100px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* ============================================
+           UTILIDADES Y HELPERS
+        ============================================ */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        .zoom-in {
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* ============================================
+           TOAST NOTIFICATIONS
+        ============================================ */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .toast.danger {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* ============================================
+           PÁGINA DE LANDING (INICIO)
+        ============================================ */
+        .landing-page {
+            height: 100vh;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 32px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .landing-bg-blur-1 {
+            position: absolute;
+            top: -10%;
+            left: -20%;
+            width: 100%;
+            height: 60%;
+            background: rgba(16, 185, 129, 0.2);
+            filter: blur(120px);
+            border-radius: 50%;
+        }
+
+        .landing-bg-blur-2 {
+            position: absolute;
+            bottom: -10%;
+            right: -20%;
+            width: 100%;
+            height: 60%;
+            background: rgba(20, 184, 166, 0.1);
+            filter: blur(120px);
+            border-radius: 50%;
+        }
+
+        .landing-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .landing-logo {
+            width: 96px;
+            height: 96px;
+            background: linear-gradient(135deg, #34d399, #14b8a6);
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            transform: rotate(3deg);
+        }
+
+        .landing-logo svg {
+            width: 48px;
+            height: 48px;
+            fill: white;
+        }
+
+        .landing-title {
+            font-size: 60px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -0.05em;
+            margin-bottom: 16px;
+            background: linear-gradient(to right, white, #a7f3d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .landing-subtitle {
+            font-size: 20px;
+            color: rgba(167, 243, 208, 0.7);
+            font-weight: 500;
+            max-width: 280px;
+        }
+
+        .landing-subtitle span {
+            color: #34d399;
+        }
+
+        .landing-buttons {
+            width: 100%;
+            max-width: 384px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(to right, #10b981, #14b8a6);
+            color: white;
+            font-weight: 900;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            border: none;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.03);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 700;
+            padding: 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
+           PÁGINA DE LOGIN
+        ============================================ */
+        .login-page {
+            min-height: 100vh;
+            background: white;
+            padding: 24px;
+            padding-bottom: 96px;
+        }
+
+        .auth-header {
+            margin-top: 32px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .auth-header-text h2 {
+            font-size: 32px;
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .auth-header-text p {
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .auth-back-btn {
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 16px;
+            color: #6b7280;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-back-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: #10b981;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: #f9fafb;
+            border: 2px solid #f3f4f6;
+            border-radius: 16px;
+            outline: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #10b981;
+            background: white;
+        }
+
+        .password-input-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #10b981;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 16px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-top: 2px;
+            accent-color: #10b981;
+        }
+
+        .checkbox-label {
+            font-size: 13px;
+            color: #4b5563;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .forgot-password-link {
+            text-align: center;
+            color: #10b981;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .forgot-password-link:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        .auth-footer {
+            margin-top: 32px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .auth-footer-link {
+            color: #10b981;
+            font-weight: 700;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .auth-footer-link:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           PÁGINA DE REGISTRO
+        ============================================ */
+        .register-page {
+            min-height: 100vh;
+            background: white;
+            padding: 24px;
+            padding-bottom: 120px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .seeking-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .seeking-btn {
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            border: 2px solid #f3f4f6;
+            background: #f9fafb;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .seeking-btn.active {
+            border-color: #10b981;
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .seeking-btn:hover:not(.active) {
+            background: #f3f4f6;
+        }
+
+        .location-input-wrapper {
+            position: relative;
+        }
+
+        .location-input-wrapper svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .location-input-wrapper input {
+            padding-left: 48px;
+            cursor: not-allowed;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .photo-slot {
+            aspect-ratio: 3/4;
+            border: 2px dashed #e5e7eb;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-slot:hover {
+            background: #d1fae5;
+            border-color: #a7f3d0;
+        }
+
+        .photo-slot-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .photo-slot:hover .photo-slot-icon {
+            transform: scale(1.1);
+        }
+
+        .photo-slot-icon svg {
+            color: #10b981;
+        }
+
+        .photo-slot-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: #d1d5db;
+            margin-top: 8px;
+        }
+
+        .photo-slot input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .photo-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-slot-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: rgba(239, 68, 68, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            border: 2px solid white;
+        }
+
+        .photo-slot-remove svg {
+            color: white;
+            width: 14px;
+            height: 14px;
+        }
+
+        textarea.form-input {
+            min-height: 128px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .fixed-bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 448px;
+            padding: 24px;
+            background: linear-gradient(to top, white, rgba(255,255,255,0.9));
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-weight: 900;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:active {
+            transform: scale(0.95);
+        }
+
+        .btn-save {
+            flex: 2;
+            background: linear-gradient(to right, #10b981, #14b8a6);
+            color: white;
+            font-weight: 900;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            border: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
+           MODAL / POPUP
+        ============================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 320px;
+            border-radius: 48px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .modal-icon.danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .modal-icon.success {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            width: 100%;
+            padding: 20px;
+            background: #dc2626;
+            color: white;
+            font-weight: 900;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+            border: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-danger:active {
+            transform: scale(0.95);
+        }
+
+        .btn-modal-cancel {
+            width: 100%;
+            padding: 20px;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-weight: 900;
+            border-radius: 16px;
+            border: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-modal-cancel:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
+           PÁGINA DE DESCUBRIMIENTO
+        ============================================ */
+        .discovery-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .app-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f3f4f6;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .header-menu-btn {
+            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .header-menu-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .header-logo {
+            font-weight: 900;
+            font-style: italic;
+            color: #10b981;
+            font-size: 24px;
+            letter-spacing: -0.05em;
+        }
+
+        .header-profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 16px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+        }
+
+        .header-profile-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .discovery-content {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-card {
+            width: 100%;
+            max-width: 384px;
+            position: relative;
+        }
+
+        .profile-card-inner {
+            position: relative;
+            aspect-ratio: 3/4.2;
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px -15px rgba(0,0,0,0.3);
+            border: 8px solid white;
+        }
+
+        .profile-card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.2) 40%, transparent);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .profile-card-name {
+            font-size: 36px;
+            font-weight: 900;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .profile-card-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #34d399;
+            font-weight: 700;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: -40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-action-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .card-action-btn:active {
+            transform: scale(0.9);
+        }
+
+        .card-action-btn.reject {
+            color: #ef4444;
+        }
+
+        .card-action-btn.like {
+            background: linear-gradient(135deg, #10b981, #14b8a6);
+            color: white;
+        }
+
+        .no-profiles {
+            text-align: center;
+            padding: 48px;
+            background: #f9fafb;
+            border-radius: 48px;
+            border: 2px dashed #e5e7eb;
+        }
+
+        .no-profiles-icon {
+            width: 96px;
+            height: 96px;
+            background: #d1fae5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: #10b981;
+        }
+
+        .no-profiles h2 {
+            font-size: 24px;
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .no-profiles p {
+            color: #6b7280;
+            margin-top: 8px;
+            font-size: 14px;
+            max-width: 220px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-restart {
+            margin-top: 32px;
+            padding: 16px 40px;
+            background: white;
+            color: #10b981;
+            font-weight: 900;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #d1fae5;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-restart:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
+           SIDEBAR DE NAVEGACIÓN
+        ============================================ */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 110;
+            transition: opacity 0.5s;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 320px;
+            background: white;
+            z-index: 120;
+            box-shadow: 0 0 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header {
+            padding: 40px;
+            background: linear-gradient(135deg, #10b981, #0d9488);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-header-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar-header h2 {
+            font-size: 36px;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -0.05em;
+        }
+
+        .sidebar-header-location {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        .sidebar-header-bg {
+            position: absolute;
+            right: -16px;
+            bottom: -16px;
+            width: 128px;
+            height: 128px;
+            color: rgba(255,255,255,0.1);
+            transform: rotate(12deg);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 900;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #9ca3af;
+            text-align: left;
+        }
+
+        .sidebar-nav-item:hover {
+            background: #f9fafb;
+            color: #111827;
+        }
+
+        .sidebar-nav-item.active {
+            background: #d1fae5;
+            color: #047857;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .sidebar-nav-item svg {
+            color: #d1d5db;
+        }
+
+        .sidebar-nav-item.active svg {
+            color: #10b981;
+        }
+
+        .sidebar-footer {
+            padding: 32px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .sidebar-logout {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #9ca3af;
+            font-weight: 700;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .sidebar-logout:hover {
+            color: #ef4444;
+        }
+
+        /* ============================================
+           PÁGINA DE MENSAJES
+        ============================================ */
+        .messages-page {
+            min-height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .matches-section {
+            padding: 16px;
+        }
+
+        .matches-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: #10b981;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            letter-spacing: 0.25em;
+        }
+
+        .matches-scroll {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+        scrollbar-width: none;
+    }
+
+    .matches-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .match-item {
+        flex-shrink: 0;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .match-avatar-wrapper {
+        position: relative;
+        padding: 4px;
+        background: linear-gradient(135deg, #34d399, #14b8a6);
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        transition: transform 0.2s;
+    }
+
+    .match-item:active .match-avatar-wrapper {
+        transform: scale(0.9);
+    }
+
+    .match-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+    }
+
+    .match-status {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        background: #10b981;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .match-name {
+        font-size: 10px;
+        font-weight: 900;
+        color: #4b5563;
+        margin-top: 8px;
+    }
+
+    .chats-section {
+        flex: 1;
+        margin-top: 8px;
+    }
+
+    .chats-label {
+        font-size: 10px;
+        font-weight: 900;
+        color: #9ca3af;
+        text-transform: uppercase;
+        padding: 0 24px;
+        margin-bottom: 8px;
+        letter-spacing: 0.25em;
+    }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        border-bottom: 1px solid #f9fafb;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .chat-item:hover {
+        background: rgba(16, 185, 129, 0.03);
+    }
+
+    .chat-avatar-wrapper {
+        position: relative;
+    }
+
+    .chat-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 24px;
+        object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .chat-online {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 16px;
+        height: 16px;
+        background: #10b981;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .chat-info {
+        flex: 1;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+    }
+
+    .chat-name {
+        font-weight: 900;
+        color: #111827;
+    }
+
+    .chat-time {
+        font-size: 10px;
+        color: #9ca3af;
+        font-weight: 700;
+    }
+
+    .chat-message {
+        font-size: 14px;
+        color: #6b7280;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .chat-input-wrapper {
+        padding: 16px;
+        border-top: 1px solid #f3f4f6;
+        position: sticky;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(12px);
+        display: flex;
+        gap: 12px;
+    }
+
+    .chat-input {
+        flex: 1;
+        background: #f3f4f6;
+        padding: 16px;
+        border-radius: 16px;
+        outline: none;
+        border: 2px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .chat-input:focus {
+        border-color: #10b981;
+        background: white;
+    }
+
+    .chat-send-btn {
+        background: #10b981;
+        color: white;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .chat-send-btn:active {
+        transform: scale(0.9);
+    }
+
+    /* ============================================
+       PÁGINA DE PERFIL
+    ============================================ */
+    .profile-page {
+        min-height: 100vh;
+        background: #f9fafb;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .profile-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+        padding-bottom: 80px;
+    }
+
+    .profile-photo-main {
+        position: relative;
+        aspect-ratio: 3/3.8;
+        width: 100%;
+        border-radius: 48px;
+        overflow: hidden;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+        border: 4px solid white;
+        background: #e5e7eb;
+        margin-bottom: 24px;
+    }
+
+    .profile-photo-placeholder {
+        position: absolute;
+        inset: 0;
+        background: #d1d5db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+    }
+
+    .profile-photo-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .profile-name {
+        font-size: 36px;
+        font-weight: 900;
+        color: white;
+    }
+
+    .profile-badge {
+        color: #34d399;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    .profile-info-card {
+        background: white;
+        padding: 32px;
+        border-radius: 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+    }
+
+    .profile-info-section {
+        margin-bottom: 24px;
+    }
+
+    .profile-info-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .profile-info-label {
+        font-size: 10px;
+        font-weight: 900;
+        color: #10b981;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 4px;
+    }
+
+    .profile-info-text {
+        color: #374151;
+        font-weight: 500;
+        line-height: 1.6;
+    }
+
+    .profile-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .profile-info-value {
+        color: #374151;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .profile-action-btn {
+        width: 100%;
+        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-weight: 900;
+        color: #374151;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .profile-action-btn:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .profile-action-btn.danger {
+        background: #fee2e2;
+        color: #dc2626;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+    }
+
+    .profile-action-btn.danger:hover {
+        background: #fecaca;
+    }
+
+    .profile-action-btn svg {
+        color: #10b981;
+    }
+
+    .profile-action-btn.danger svg {
+        color: #dc2626;
+    }
+
+    /* ============================================
+       RESPONSIVE ADJUSTMENTS
+    ============================================ */
+    @media (max-width: 480px) {
+        .landing-title {
+            font-size: 48px;
+        }
+
+        .landing-subtitle {
+            font-size: 18px;
+        }
+
+        .profile-card-name {
+            font-size: 28px;
+        }
+    }
+</style>
+</head>
+<body>
+    <!-- ============================================
+         CONTENEDOR PRINCIPAL DE LA APP
+    ============================================ -->
+    <div class="container" id="app">
+        <!-- Toast Notification -->
+        <div id="toast" class="toast"></div>
+    <!-- ============================================
+         VISTA: LANDING PAGE (INICIO)
+    ============================================ -->
+    <div id="landing-view" class="landing-page fade-in">
+        <div class="landing-bg-blur-1"></div>
+        <div class="landing-bg-blur-2"></div>
+        
+        <div class="landing-content">
+            <div class="landing-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+            </div>
+            <h1 class="landing-title">LionMatch</h1>
+            <p class="landing-subtitle">Conecta con personas reales en <span>León, Gto</span>.</p>
+        </div>
+
+        <div class="landing-buttons">
+            <button class="btn-primary" onclick="showRegister()">Crear cuenta</button>
+            <button class="btn-secondary" onclick="showLogin()">Entrar</button>
+        </div>
     </div>
-  );
-};
 
-export default function App() {
-  // --- ESTADOS DE NAVEGACIÓN Y UI ---
-  const [currentView, setCurrentView] = useState('landing'); 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [cardIndex, setCardIndex] = useState(0);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // --- MOCK DE DATOS DEL USUARIO LOGUEADO ---
-  const [myProfile, setMyProfile] = useState({
-    name: 'Roberto',
-    age: 26,
-    bio: 'Arquitecto buscando alguien para ir por unos tacos de aire al Barrio de San Juan.',
-    interests: 'Arquitectura, Fotografía, Gastronomía',
-    seeking: 'Mujeres',
-    photos: []
-  });
-
-  // --- MOCK DE DESCUBRIMIENTO ---
-  const profiles = [
-    { id: 1, name: 'Valentina', age: 23, bio: 'Amo los domingos en el Parque Metropolitano.', photos: ['https://images.unsplash.com/photo-1524504388940-b1c1722653e1'] },
-    { id: 2, name: 'Mateo', age: 28, bio: 'Fanático del Club León. ¡Dale Verde!', photos: ['https://images.unsplash.com/photo-1506794778202-cad84cf45f1d'] }
-  ];
-
-  // --- HELPERS ---
-  const notify = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
-  };
-
-  const handleAction = (msg) => {
-    notify(msg);
-    setCardIndex(prev => prev + 1);
-  };
-
-  // --- 1. PÁGINA DE ACCESO (LANDING) ---
-  const LandingView = () => (
-    <div className="h-screen bg-[#0f172a] flex flex-col items-center justify-between p-8 text-white relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-20%] w-[100%] h-[60%] bg-emerald-600/20 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] right-[-20%] w-[100%] h-[60%] bg-teal-600/10 blur-[120px] rounded-full" />
-      
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 text-center animate-in fade-in zoom-in-95 duration-700">
-        <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-[2.5rem] shadow-[0_0_50px_rgba(16,185,129,0.4)] flex items-center justify-center mb-8 rotate-3">
-          <Heart size={48} fill="white" className="text-white" />
-        </div>
-        <h1 className="text-6xl font-black italic tracking-tighter mb-4 bg-gradient-to-r from-white to-emerald-300 bg-clip-text text-transparent">LionMatch</h1>
-        <p className="text-xl text-emerald-100/70 font-medium max-w-[280px]">Conecta con personas reales en <span className="text-emerald-400">León, Gto</span>.</p>
-      </div>
-
-      <div className="w-full max-w-sm space-y-4 mb-10 relative z-10">
-        <button 
-          id="btn_register" 
-          onClick={() => setCurrentView('onboarding')}
-          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black py-5 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:scale-[1.03] active:scale-95 transition-all text-lg uppercase tracking-wider"
-        >
-          Crear cuenta
-        </button>
-        <button 
-          id="btn_login" 
-          onClick={() => { setCurrentView('discovery'); notify('¡Bienvenido de nuevo!'); }}
-          className="w-full bg-white/5 border border-white/10 text-white font-bold py-5 rounded-2xl backdrop-blur-md hover:bg-white/10 active:scale-95 transition-all"
-        >
-          Entrar
-        </button>
-      </div>
-    </div>
-  );
-
-  // --- 2. PÁGINA DE FORMULARIO (REGISTRO / EDICIÓN) ---
-  const FormView = ({ isEditing = false }) => (
-    <div className="min-h-screen bg-white p-6 pb-24 animate-in slide-in-from-right duration-500 overflow-y-auto">
-      <header className="mt-8 mb-8 flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900">{isEditing ? 'Editar Perfil' : 'Registro'}</h2>
-          <p className="text-gray-400 text-sm font-medium">Completa tu información de León.</p>
-        </div>
-        {isEditing && (
-          <button onClick={() => setCurrentView('profile')} className="p-3 bg-gray-100 rounded-2xl text-gray-500">
-            <X size={20} />
-          </button>
-        )}
-      </header>
-
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 gap-4">
-          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-[-8px]">Información Personal</label>
-          <input id="txt_nombre" defaultValue={isEditing ? myProfile.name : ''} type="text" placeholder="Tu nombre" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium" />
-          <div className="grid grid-cols-2 gap-4">
-            <input id="txt_nacimiento" type="date" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium" />
-            <select id="sel_genero" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none font-medium">
-              <option value="">Género</option>
-              <option>Hombre</option>
-              <option>Mujer</option>
-              <option>No binario</option>
-            </select>
-          </div>
+    <!-- ============================================
+         VISTA: LOGIN
+    ============================================ -->
+    <div id="login-view" class="login-page hidden">
+        <div class="auth-header">
+            <div class="auth-header-text">
+                <h2>Bienvenido</h2>
+                <p>Inicia sesión en León, Gto</p>
+            </div>
+            <button class="auth-back-btn" onclick="showLanding()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
 
-        <div className="space-y-4">
-          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">¿Qué buscas? *</label>
-          <div className="grid grid-cols-2 gap-3" id="sel_busqueda">
-            <button className={`p-4 rounded-2xl font-bold transition-all border-2 ${myProfile.seeking === 'Hombres' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>Hombres</button>
-            <button className={`p-4 rounded-2xl font-bold transition-all border-2 ${myProfile.seeking === 'Mujeres' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>Mujeres</button>
-          </div>
-        </div>
+        <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-input" id="login-email" placeholder="tu@correo.com" required>
+            </div>
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ubicación (Exclusiva)</label>
-          <div className="relative group">
-            <input id="ciudad_estado" disabled readOnly value="León, Guanajuato" className="w-full p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl text-gray-400 pl-12 cursor-not-allowed font-bold" />
-            <Lock size={18} className="absolute left-4 top-4 text-gray-400" />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Fotos Requeridas (4)</label>
-          <div className="grid grid-cols-2 gap-3">
-            {[1,2,3,4].map(i => (
-              <div key={i} id={`foto_${i}`} className="aspect-[3/4] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer group shadow-sm">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <Camera className="text-emerald-500" size={20} />
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <div class="password-input-wrapper">
+                    <input type="password" class="form-input" id="login-password" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
                 </div>
-                <span className="text-[10px] font-black text-gray-300 mt-2">SLOT {i}</span>
-              </div>
-            ))}
-          </div>
+            </div>
+
+            <button type="submit" class="btn-save">Iniciar Sesión</button>
+        </form>
+
+        <div class="forgot-password-link" onclick="showForgotPassword()">
+            ¿Olvidaste tu contraseña?
         </div>
 
-        <div className="space-y-4">
-          <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Acerca de ti</label>
-          <textarea id="txt_bio" defaultValue={isEditing ? myProfile.bio : ''} placeholder="Bio, intereses y aficiones..." className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-emerald-500 outline-none h-32 font-medium" />
+        <div class="auth-footer">
+            ¿No tienes cuenta? <span class="auth-footer-link" onclick="showRegister()">Regístrate aquí</span>
         </div>
-      </div>
-
-      <div className="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-white via-white/90 to-transparent flex gap-3">
-        {isEditing && (
-          <button onClick={() => setCurrentView('profile')} className="flex-1 bg-gray-100 text-gray-600 font-black py-5 rounded-2xl shadow-lg uppercase text-xs">Cancelar</button>
-        )}
-        <button 
-          id="btn_save"
-          onClick={() => { setCurrentView(isEditing ? 'profile' : 'discovery'); notify(isEditing ? 'Perfil actualizado' : '¡Registro completado!'); }}
-          className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest text-xs"
-        >
-          {isEditing ? 'Guardar Cambios' : 'Comenzar'}
-        </button>
-      </div>
     </div>
-  );
 
-  // --- 3. PÁGINA DE DESCUBRIMIENTO (EL MURO) ---
-  const DiscoveryView = () => {
-    const active = profiles[cardIndex];
-    return (
-      <div className="h-screen flex flex-col bg-white animate-in fade-in">
-        <header className="p-4 flex items-center justify-between border-b bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} className="text-gray-900" /></button>
-          <h2 className="font-black italic text-emerald-600 text-2xl tracking-tighter">LionMatch</h2>
-          <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center cursor-pointer" onClick={() => setCurrentView('profile')}>
-            <User size={20} className="text-gray-500" />
-          </div>
+    <!-- ============================================
+         VISTA: RECUPERAR CONTRASEÑA
+    ============================================ -->
+    <div id="forgot-password-view" class="login-page hidden">
+        <div class="auth-header">
+            <div class="auth-header-text">
+                <h2>Recuperar Contraseña</h2>
+                <p>Te enviaremos un enlace de recuperación</p>
+            </div>
+            <button class="auth-back-btn" onclick="showLogin()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+        </div>
+
+        <form class="auth-form" id="forgot-password-form" onsubmit="handleForgotPassword(event)">
+            <div class="form-group">
+                <label class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-input" id="forgot-email" placeholder="tu@correo.com" required>
+            </div>
+
+            <button type="submit" class="btn-save">Enviar Enlace</button>
+        </form>
+
+        <div class="auth-footer">
+            <span class="auth-footer-link" onclick="showLogin()">Volver a inicio de sesión</span>
+        </div>
+    </div>
+
+    <!-- ============================================
+         VISTA: REGISTRO
+    ============================================ -->
+    <div id="register-view" class="register-page hidden">
+        <div class="auth-header">
+            <div class="auth-header-text">
+                <h2>Registro</h2>
+                <p>Completa tu información de León.</p>
+            </div>
+            <button class="auth-back-btn" onclick="showLanding()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+            <!-- INFORMACIÓN DE CUENTA -->
+            <div class="form-group">
+                <label class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-input" id="register-email" placeholder="tu@correo.com" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <div class="password-input-wrapper">
+                    <input type="password" class="form-input" id="register-password" placeholder="••••••••" required minlength="6">
+                    <button type="button" class="password-toggle" onclick="togglePassword('register-password', this)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Confirmar Contraseña</label>
+                <div class="password-input-wrapper">
+                    <input type="password" class="form-input" id="register-password-confirm" placeholder="••••••••" required minlength="6">
+                    <button type="button" class="password-toggle" onclick="togglePassword('register-password-confirm', this)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- INFORMACIÓN PERSONAL -->
+            <div class="form-group">
+                <label class="form-label">Información Personal</label>
+                <input type="text" class="form-input" id="register-name" placeholder="Tu nombre" required>
+            </div>
+
+            <div class="grid-2">
+                <input type="date" class="form-input" id="register-birthdate" required>
+                <select class="form-input" id="register-gender" required>
+                    <option value="">Género</option>
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                    <option value="No binario">No binario</option>
+                </select>
+            </div>
+
+            <!-- ¿QUÉ BUSCAS? -->
+            <div class="form-group">
+                <label class="form-label">¿Qué buscas? *</label>
+                <div class="seeking-buttons">
+                    <button type="button" class="seeking-btn" data-value="Hombres" onclick="selectSeeking(this)">Hombres</button>
+                    <button type="button" class="seeking-btn" data-value="Mujeres" onclick="selectSeeking(this)">Mujeres</button>
+                </div>
+                <input type="hidden" id="register-seeking" required>
+            </div>
+
+            <!-- UBICACIÓN -->
+            <div class="form-group">
+                <label class="form-label" style="color: #9ca3af;">Ubicación (Exclusiva)</label>
+                <div class="location-input-wrapper">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <input type="text" class="form-input" value="León, Guanajuato" disabled readonly>
+                </div>
+            </div>
+
+            <!-- FOTOS -->
+            <div class="form-group">
+                <label class="form-label">Fotos Requeridas (4)</label>
+                <div class="photo-grid">
+                    <div class="photo-slot" id="photo-slot-1">
+                        <div class="photo-slot-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="photo-slot-label">SLOT 1</span>
+                        <input type="file" accept="image/*" onchange="handlePhotoUpload(event, 1)">
+                    </div>
+                    <div class="photo-slot" id="photo-slot-2">
+                        <div class="photo-slot-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="photo-slot-label">SLOT 2</span>
+                        <input type="file" accept="image/*" onchange="handlePhotoUpload(event, 2)">
+                    </div>
+                    <div class="photo-slot" id="photo-slot-3">
+                        <div class="photo-slot-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="photo-slot-label">SLOT 3</span>
+                        <input type="file" accept="image/*" onchange="handlePhotoUpload(event, 3)">
+                    </div>
+                    <div class="photo-slot" id="photo-slot-4">
+                        <div class="photo-slot-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="photo-slot-label">SLOT 4</span>
+                        <input type="file" accept="image/*" onchange="handlePhotoUpload(event, 4)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- BIOGRAFÍA -->
+            <div class="form-group">
+                <label class="form-label">Acerca de ti</label>
+                <textarea class="form-input" id="register-bio" placeholder="Bio, intereses y aficiones..." required></textarea>
+            </div>
+
+            <!-- TÉRMINOS Y CONDICIONES -->
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="register-terms" required>
+                <label class="checkbox-label" for="register-terms">
+                    Confirmo que soy mayor de 18 años y que toda la información proporcionada es correcta. Acepto los términos y condiciones de LionMatch.
+                </label>
+            </div>
+
+            <button type="submit" class="btn-save">Crear Mi Cuenta</button>
+        </form>
+
+        <div class="auth-footer">
+            ¿Ya tienes cuenta? <span class="auth-footer-link" onclick="showLogin()">Inicia sesión aquí</span>
+        </div>
+    </div>
+
+    <!-- ============================================
+         VISTA: DESCUBRIMIENTO
+    ============================================ -->
+    <div id="discovery-view" class="discovery-page hidden">
+        <header class="app-header">
+            <button class="header-menu-btn" onclick="toggleSidebar()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <h2 class="header-logo">LionMatch</h2>
+            <button class="header-profile-btn" onclick="showProfile()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </button>
         </header>
 
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
-          {active ? (
-            <div className="w-full max-w-sm relative animate-in zoom-in-95 duration-500">
-              <div className="relative aspect-[3/4.2] rounded-[3rem] overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-8 border-white group">
-                <img src={active.photos[0]} className="w-full h-full object-cover" alt={active.name} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-8 flex flex-col justify-end">
-                  <h3 className="text-4xl font-black text-white leading-tight">{active.name}, {active.age}</h3>
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs mt-1">
-                    <MapPin size={12} /> León, Gto
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-center gap-6 -mt-10 relative z-10">
-                <button id="btn_reject" onClick={() => handleAction('Perfil rechazado')} className="w-20 h-20 rounded-full bg-white shadow-2xl flex items-center justify-center text-red-500 hover:scale-110 active:scale-90 transition-all border border-gray-100 group"><X size={36} className="group-hover:rotate-12 transition-transform" strokeWidth={3} /></button>
-                <button id="btn_like" onClick={() => handleAction('¡Match enviado! ❤️')} className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-90 transition-all group"><Heart size={36} fill="currentColor" className="group-hover:scale-110 transition-transform" /></button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center p-12 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200 animate-in zoom-in-95">
-              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600"><Search size={40} /></div>
-              <h2 className="text-2xl font-black text-gray-900">¿Eso es todo?</h2>
-              <p className="text-gray-500 mt-2 text-sm max-w-[220px] mx-auto">“Por ahora no hay más perfiles en León.”</p>
-              <button onClick={() => setCardIndex(0)} className="mt-8 px-10 py-4 bg-white text-emerald-600 font-black rounded-2xl shadow-sm border border-emerald-100 active:scale-95 transition-all uppercase text-xs tracking-widest">Reiniciar búsqueda</button>
-            </div>
-          )}
+        <div class="discovery-content" id="discovery-content">
+            <!-- Se llenará dinámicamente con JavaScript -->
         </div>
-      </div>
-    );
-  };
-
-  // --- 4. PÁGINA DE MENSAJERÍA (BANDEJA + CHAT) ---
-  const MessagesView = () => (
-    <div className="min-h-screen bg-white flex flex-col animate-in slide-in-from-bottom-4 duration-500">
-      <header className="p-4 border-b flex items-center gap-4 bg-white sticky top-0 z-20">
-        <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} /></button>
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Chats</h2>
-      </header>
-      
-      <div className="p-4">
-        <label className="text-[10px] font-black text-emerald-600 uppercase mb-4 tracking-[0.25em] block">Nuevos Matches</label>
-        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="flex-shrink-0 text-center space-y-2 group cursor-pointer">
-              <div className="relative p-1 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full shadow-lg group-active:scale-90 transition-transform">
-                <img src={`https://i.pravatar.cc/100?u=${i+30}`} className="w-16 h-16 rounded-full object-cover border-4 border-white" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
-              </div>
-              <p className="text-[10px] font-black text-gray-600">User {i}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 mt-2">
-        <label className="text-[10px] font-black text-gray-400 uppercase px-6 mb-2 tracking-[0.25em] block">Recientes</label>
-        {[
-          { name: 'Diana', msg: '¿Mañana un café en el Moral? ☕', time: '5m', online: true },
-          { name: 'Sebastian', msg: '¡Dale Verde! Jajaja 🦁', time: '1h', online: false }
-        ].map((chat, i) => (
-          <div key={i} onClick={() => notify(`Chat con ${chat.name} (Próximamente)`)} className="flex items-center gap-4 p-5 hover:bg-emerald-50/50 transition-colors cursor-pointer border-b border-gray-50">
-            <div className="relative">
-              <img src={`https://i.pravatar.cc/100?u=${i+10}`} className="w-16 h-16 rounded-[1.5rem] object-cover shadow-md" />
-              {chat.online && <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />}
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between mb-0.5">
-                <h4 className="font-black text-gray-900">{chat.name}</h4>
-                <span className="text-[10px] text-gray-400 font-bold">{chat.time}</span>
-              </div>
-              <p className="text-sm text-gray-500 truncate font-medium">{chat.msg}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-4 border-t sticky bottom-0 bg-white/90 backdrop-blur-md flex gap-3">
-        <input id="txt_chat_mensaje" type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-gray-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-sm" />
-        <button id="btn_send" onClick={() => notify('Mensaje enviado ✨')} className="bg-emerald-500 text-white p-4 rounded-2xl shadow-xl active:scale-90 transition-transform"><Send size={20} /></button>
-      </div>
     </div>
-  );
 
-  // --- 5. PÁGINA DE PERFIL (AJUSTES) ---
-  const ProfileView = () => (
-    <div className="min-h-screen bg-gray-50 flex flex-col animate-in slide-in-from-left duration-500">
-      <header className="p-4 bg-white border-b flex items-center gap-4">
-        <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><Menu size={24} /></button>
-        <h2 className="text-xl font-black text-gray-900">Mi Perfil</h2>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-20">
-        <div className="relative aspect-[3/3.8] w-full rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white bg-gray-200">
-          <div className="absolute inset-0 bg-gray-300 flex items-center justify-center"><User size={64} className="text-gray-400" /></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-8 flex flex-col justify-end">
-            <h3 className="text-4xl font-black text-white">{myProfile.name}, {myProfile.age}</h3>
-            <p className="text-emerald-400 font-bold text-sm tracking-widest uppercase">Premium León User</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm space-y-6">
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Biografía</label>
-            <p className="text-gray-700 font-medium leading-relaxed">{myProfile.bio}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Gustos / Aficiones</label>
-              <p className="text-gray-700 font-bold text-sm">{myProfile.interests}</p>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Busca</label>
-              <p className="text-gray-700 font-bold text-sm">{myProfile.seeking}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <button id="btn_edit_profile" onClick={() => setCurrentView('edit')} className="w-full p-5 bg-white rounded-2xl flex items-center gap-4 font-black text-gray-700 shadow-sm hover:shadow-md transition-all">
-            <Edit3 size={20} className="text-emerald-500" /> Editar información del perfil
-          </button>
-          <button id="btn_delete_account" onClick={() => setShowDeleteModal(true)} className="w-full p-5 bg-red-50 text-red-600 rounded-2xl flex items-center gap-4 font-black shadow-sm hover:bg-red-100 transition-all uppercase text-[10px] tracking-widest">
-            <Trash2 size={20} /> Eliminar cuenta permanentemente
-          </button>
-        </div>
-      </div>
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-8 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-xs rounded-[3rem] p-10 text-center shadow-2xl animate-in zoom-in-95">
-            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6"><AlertCircle size={40} /></div>
-            <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2">¿Seguro?</h3>
-            <p className="text-gray-500 text-sm font-medium">Esta acción es irreversible y borrará todos tus datos en León.</p>
-            <div className="mt-8 space-y-2">
-              <button id="btn_confirm_delete" className="w-full py-5 bg-red-600 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-all text-xs tracking-widest uppercase">Sí, borrar cuenta</button>
-              <button onClick={() => setShowDeleteModal(false)} className="w-full py-5 bg-gray-100 text-gray-500 font-black rounded-2xl active:scale-95 transition-all text-xs tracking-widest uppercase">Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  // --- NAVEGACIÓN: SIDEBAR (HAMBURGUESA) ---
-  const Sidebar = () => (
-    <>
-      <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)} />
-      <div className={`fixed top-0 left-0 h-full w-80 bg-white z-[120] transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-2xl flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-10 bg-gradient-to-br from-emerald-600 to-teal-700 text-white relative overflow-hidden">
-          <div className="relative z-10">
-            <h2 className="text-4xl font-black italic tracking-tighter">LionMatch</h2>
-            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] mt-1 opacity-70"><MapPin size={10} /> León, Gto</div>
-          </div>
-          <Heart className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 rotate-12" fill="currentColor" />
-        </div>
-        
-        <nav className="flex-1 p-6 space-y-2">
-          {[
-            { id: 'landing', icon: Home, label: 'Inicio' },
-            { id: 'discovery', icon: Search, label: 'Descubrir' },
-            { id: 'messages', icon: MessageCircle, label: 'Mensajes' },
-            { id: 'profile', icon: User, label: 'Mi Perfil' }
-          ].map((item) => (
-            <button 
-              key={item.id}
-              onClick={() => { setCurrentView(item.id); setIsMenuOpen(false); }}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black transition-all ${currentView === item.id ? 'bg-emerald-50 text-emerald-700 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              <item.icon size={20} className={currentView === item.id ? 'text-emerald-600' : 'text-gray-300'} />
-              {item.label}
+    <!-- ============================================
+         VISTA: MENSAJES
+    ============================================ -->
+    <div id="messages-view" class="messages-page hidden">
+        <header class="app-header">
+            <button class="header-menu-btn" onclick="toggleSidebar()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
             </button>
-          ))}
-        </nav>
-        
-        <div className="p-8 border-t border-gray-100">
-          <button className="flex items-center gap-3 text-gray-400 font-bold hover:text-red-500 transition-colors uppercase text-[10px] tracking-widest"><LogIn size={18} /> Cerrar Sesión</button>
-        </div>
-      </div>
-    </>
-  );
+            <h2 class="header-logo" style="color: #111827; font-weight: 900;">Chats</h2>
+            <div style="width: 40px;"></div>
+        </header>
 
-  return (
-    <div className="max-w-md mx-auto relative bg-white min-h-screen shadow-[0_0_100px_rgba(0,0,0,0.1)] font-sans selection:bg-emerald-100 overflow-x-hidden">
-      <Sidebar />
-      <Toast message={toast.message} type={toast.type} isVisible={toast.show} />
-      
-      {currentView === 'landing' && <LandingView />}
-      {currentView === 'onboarding' && <FormView isEditing={false} />}
-      {currentView === 'edit' && <FormView isEditing={true} />}
-      {currentView === 'discovery' && <DiscoveryView />}
-      {currentView === 'messages' && <MessagesView />}
-      {currentView === 'profile' && <ProfileView />}
+        <div class="matches-section">
+            <label class="matches-label">Nuevos Matches</label>
+            <div class="matches-scroll">
+                <div class="match-item" onclick="showToast('Chat con User 1 (Próximamente)')">
+                    <div class="match-avatar-wrapper">
+                        <img src="https://i.pravatar.cc/100?u=31" class="match-avatar" alt="User 1">
+                        <div class="match-status"></div>
+                    </div>
+                    <p class="match-name">User 1</p>
+                </div>
+                <div class="match-item" onclick="showToast('Chat con User 2 (Próximamente)')">
+                    <div class="match-avatar-wrapper">
+                        <img src="https://i.pravatar.cc/100?u=32" class="match-avatar" alt="User 2">
+                        <div class="match-status"></div>
+                    </div>
+                    <p class="match-name">User 2</p>
+                </div>
+                <div class="match-item" onclick="showToast('Chat con User 3 (Próximamente)')">
+                    <div class="match-avatar-wrapper">
+                        <img src="https://i.pravatar.cc/100?u=33" class="match-avatar" alt="User 3">
+                        <div class="match-status"></div>
+                    </div>
+                    <p class="match-name">User 3</p>
+                </div>
+                <div class="match-item" onclick="showToast('Chat con User 4 (Próximamente)')">
+                    <div class="match-avatar-wrapper">
+                        <img src="https://i.pravatar.cc/100?u=34" class="match-avatar" alt="User 4">
+                        <div class="match-status"></div>
+                    </div>
+                    <p class="match-name">User 4</p>
+                </div>
+                <div class="match-item" onclick="showToast('Chat con User 5 (Próximamente)')">
+                    <div class="match-avatar-wrapper">
+                        <img src="https://i.pravatar.cc/100?u=35" class="match-avatar" alt="User 5">
+                        <div class="match-status"></div>
+                    </div>
+                    <p class="match-name">User 5</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chats-section">
+            <label class="chats-label">Recientes</label>
+            <div class="chat-item" onclick="showToast('Chat con Diana (Próximamente)')">
+                <div class="chat-avatar-wrapper">
+                    <img src="https://i.pravatar.cc/100?u=10" class="chat-avatar" alt="Diana">
+                    <div class="chat-online"></div>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-header">
+                        <h4 class="chat-name">Sebastian</h4>
+                        <span class="chat-time">2h</span>
+                    </div>
+                    <p class="chat-message">¡Qué onda! ¿Viste el partido? 🦁</p>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-}
+
+    <div id="profilePage" class="profile-page hidden">
+        <div class="app-header">
+            <button class="header-menu-btn" onclick="toggleSidebar()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+            <div class="header-logo">Mi Perfil</div>
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="profile-content">
+            <div class="profile-photo-main">
+                <img src="https://i.pravatar.cc/400?u=me" alt="Mi Foto" style="width:100%; height:100%; object-fit:cover;">
+                <div class="profile-photo-overlay">
+                    <h2 class="profile-name" id="userNameDisplay">Tu Nombre</h2>
+                    <p class="profile-badge">USUARIO VERIFICADO</p>
+                </div>
+            </div>
+
+            <div class="profile-info-card">
+                <div class="profile-info-section">
+                    <label class="profile-info-label">Biografía</label>
+                    <p class="profile-info-text">Amante de la vida en León, fan de los Panzas Verdes y siempre listo para un café en el Moral.</p>
+                </div>
+                <div class="profile-info-grid">
+                    <div class="profile-info-section">
+                        <label class="profile-info-label">Ubicación</label>
+                        <p class="profile-info-value">León, Gto</p>
+                    </div>
+                    <div class="profile-info-section">
+                        <label class="profile-info-label">Interés</label>
+                        <p class="profile-info-value">Amistad / Citas</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="profile-action-btn" onclick="showToast('Editando perfil...')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Editar Información
+                </button>
+                <button class="profile-action-btn danger" onclick="openModal('logout')">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <div id="modalOverlay" class="modal-overlay hidden">
+        <div class="modal-content zoom-in">
+            <div id="modalIcon" class="modal-icon"></div>
+            <h3 id="modalTitle" class="modal-title"></h3>
+            <p id="modalText" class="modal-text"></p>
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = 'TU_URL_DE_SUPABASE';
+    const SUPABASE_KEY = 'TU_ANON_KEY_DE_SUPABASE';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // REFERENCIAS DE NAVEGACIÓN
+    const pages = {
+        landing: document.getElementById('landingPage'),
+        login: document.getElementById('loginPage'),
+        register: document.getElementById('registerPage'),
+        discovery: document.getElementById('discoveryPage'),
+        messages: document.getElementById('messagesPage'),
+        profile: document.getElementById('profilePage')
+    };
+
+    // COMENTARIO: FUNCIÓN PARA CAMBIAR ENTRE PÁGINAS
+    function showPage(pageName) {
+        Object.values(pages).forEach(p => p.classList.add('hidden'));
+        pages[pageName].classList.remove('hidden');
+        if (pageName !== 'landing' && pageName !== 'login' && pageName !== 'register') {
+            closeSidebar();
+        }
+    }
+
+    // COMENTARIO: LÓGICA DE LOGIN CON VALIDACIÓN
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: pass,
+        });
+
+        if (error) {
+            showToast(error.message, 'danger');
+        } else {
+            showToast('¡Bienvenido de nuevo!', 'success');
+            showPage('discovery');
+        }
+    }
+
+    // COMENTARIO: LÓGICA DE REGISTRO CON VERIFICACIÓN DE EDAD Y DOBLE PASSWORD
+    async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById('regEmail').value;
+        const pass = document.getElementById('regPass').value;
+        const confirmPass = document.getElementById('regConfirmPass').value;
+        const ageCheck = document.getElementById('ageCheck').checked;
+
+        if (!ageCheck) {
+            showToast('Debes confirmar que eres mayor de edad', 'danger');
+            return;
+        }
+
+        if (pass !== confirmPass) {
+            showToast('Las contraseñas no coinciden', 'danger');
+            return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: pass,
+        });
+
+        if (error) {
+            showToast(error.message, 'danger');
+        } else {
+            openModal('success', 'Cuenta Creada', 'Revisa tu correo para confirmar tu cuenta.');
+            showPage('login');
+        }
+    }
+
+    // COMENTARIO: LÓGICA PARA RECUPERAR CONTRASEÑA
+    async function handleResetPassword() {
+        const email = prompt("Ingresa tu correo electrónico:");
+        if (!email) return;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) {
+            showToast(error.message, 'danger');
+        } else {
+            showToast('Correo de recuperación enviado', 'success');
+        }
+    }
+
+    // COMENTARIO: FUNCIÓN TOGGLE VISIBILIDAD DE CONTRASEÑA (EYE ICON)
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // COMENTARIO: GESTIÓN DE NOTIFICACIONES TOAST
+    function showToast(msg, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = `toast show ${type}`;
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // COMENTARIO: GESTIÓN DE MODALES DINÁMICOS
+    function openModal(type, title, text) {
+        const modal = document.getElementById('modalOverlay');
+        const mTitle = document.getElementById('modalTitle');
+        const mText = document.getElementById('modalText');
+        const mActions = document.getElementById('modalActions');
+        const mIcon = document.getElementById('modalIcon');
+
+        modal.classList.remove('hidden');
+
+        if (type === 'logout') {
+            mTitle.textContent = '¿Cerrar Sesión?';
+            mText.textContent = 'Extrañaremos tus rugidos en LionMatch.';
+            mIcon.className = 'modal-icon danger';
+            mIcon.innerHTML = '×';
+            mActions.innerHTML = `
+                <button class="btn-danger" onclick="logout()">SÍ, SALIR</button>
+                <button class="btn-modal-cancel" onclick="closeModal()">CANCELAR</button>
+            `;
+        } else {
+            mTitle.textContent = title;
+            mText.textContent = text;
+            mIcon.className = `modal-icon ${type}`;
+            mIcon.innerHTML = type === 'success' ? '✓' : '!';
+            mActions.innerHTML = `<button class="btn-modal-cancel" onclick="closeModal()">ACEPTAR</button>`;
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.add('hidden');
+    }
+
+    async function logout() {
+        await supabase.auth.signOut();
+        closeModal();
+        showPage('landing');
+        showToast('Sesión cerrada');
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.style.transform = 'translateX(0)';
+        overlay.classList.remove('hidden');
+    }
+
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.style.transform = 'translateX(-100%)';
+        overlay.classList.add('hidden');
+    }
+</script>
+</body>
+</html>
